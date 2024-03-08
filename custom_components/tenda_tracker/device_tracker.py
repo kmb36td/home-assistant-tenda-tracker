@@ -92,7 +92,7 @@ class TendaClient:
             self.auth()
 
         response = requests.get(
-            "http://" + self.host + "/goform/getOnlineList?" + str(time()),
+            "http://" + self.host + "/goform/GetIpMacBind?" + str(time()),
             verify=False,
             cookies=self.cookies,
             allow_redirects=False,
@@ -106,21 +106,38 @@ class TendaClient:
 
         devices = {}
 
-        for device in json_response:
+        for device in json_response["dhcpClientList"]:
             mac = None
             name = None
+            status = None
+            _LOGGER.debug(device)
+            if "macaddr" in device:
+                mac = device.get("macaddr")
 
-            if "deviceId" in device:
-                mac = device.get("deviceId")
-            elif "localhostName" in device:
-                mac = device.get("localhostMac")
+            if "devname" in device:
+                name = device.get("devname")
 
-            if "devName" in device:
-                name = device.get("devName")
-            elif "localhostName" in device:
-                name = device.get("localhostName")
+            if "status" in device:
+                status = device.get("status")
 
-            if mac is not None and name is not None:
+            if status == "1":
+                devices[mac] = name
+        
+        for device in json_response["bindList"]:
+            mac = None
+            name = None
+            status = None
+            _LOGGER.debug(device)
+            if "macaddr" in device:
+                mac = device.get("macaddr")
+
+            if "devname" in device:
+                name = device.get("devname")
+
+            if "status" in device:
+                status = device.get("status")
+
+            if status == "1":
                 devices[mac] = name
 
         return devices
